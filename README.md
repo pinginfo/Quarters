@@ -103,6 +103,22 @@ and `kubebuilder edit --plugins=helm/v2-alpha --force`, then restore the local e
 If Cilium or Gatekeeper CRDs are installed after the operator started, they are
 picked up within 10 minutes (periodic resync) or on restart.
 
+### Tenants with Helm
+
+`dist/tenants-chart` is a second chart that only renders `TenantProfile` and `Tenant` objects from a
+values file. Install the operator chart first (it provides the CRDs and the webhook), then:
+
+```sh
+helm upgrade --install tenants dist/tenants-chart -n quarters-system -f my-tenants.yaml
+```
+
+`profiles` and `tenants` are maps keyed by name, and each entry is the `spec` as in the CRD
+(plus `adopt: true` on a tenant to set the adopt annotation). `values.schema.json` rejects a missing
+`team`, a bad quantity such as `"50h"` or a misspelled field at `helm lint`/`template` time, before the webhook does.
+Objects carry `helm.sh/resource-policy: keep` and Argo CD `Prune=false` (`commonAnnotations`), so removing
+a tenant from the file never deletes it: use `kubectl delete tenant` for that. Profiles are applied in
+Argo CD sync wave 0 and tenants in wave 1. The chart is optional, plain `Tenant` YAML in Git works as well.
+
 ## Develop
 
 Requires Go and, for the integration tests, the envtest binaries

@@ -1,0 +1,20 @@
+{{- range $name, $spec := .Values.tenants }}
+---
+apiVersion: quarters.pinginfo.io/v1alpha1
+kind: Tenant
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/part-of: quarters
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    {{- if $spec.adopt }}
+    quarters.pinginfo.io/adopt: "true"
+    {{- end }}
+    {{- with $.Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- toYaml (omit $spec "adopt") | nindent 2 }}
+{{- end }}

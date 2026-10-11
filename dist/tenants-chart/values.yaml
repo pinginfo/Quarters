@@ -1,0 +1,68 @@
+# Install the Quarters operator chart (dist/chart) first: it provides the CRDs
+# and the validating webhook that checks everything rendered here.
+
+# Annotations put on every Tenant and TenantProfile.
+# helm.sh/resource-policy=keep makes Helm leave the object in the cluster when it is
+# removed from this file or the release is uninstalled; Prune=false does the same
+# for Argo CD. Set both to {} to let removals delete the objects.
+commonAnnotations:
+  helm.sh/resource-policy: keep
+  argocd.argoproj.io/sync-options: Prune=false
+
+# TenantProfiles, keyed by name. The spec is written exactly as in the CRD.
+# Tenants use the profile named "default" unless they set profileRef.
+profiles:
+  default:
+    quota:
+      requests.cpu: "2"
+      requests.memory: 4Gi
+      requests.storage: 20Gi
+      limits.cpu: "4"
+      limits.memory: 8Gi
+      pods: "20"
+      services: "10"
+      replicationcontrollers: "10"
+      count/deployments.apps: "10"
+      count/statefulsets.apps: "5"
+      count/daemonsets.apps: "0"
+      count/jobs.batch: "10"
+      count/cronjobs.batch: "5"
+      configmaps: "20"
+      secrets: "20"
+      persistentvolumeclaims: "5"
+    limitRange:
+      default: {cpu: 100m, memory: 128Mi}
+      defaultRequest: {cpu: 100m, memory: 128Mi}
+    podSecurity:
+      enforce: baseline
+      audit: restricted
+      warn: restricted
+    scheduling:
+      nodeSelector: {mode: Disabled}
+      tolerations: {mode: Disabled}
+
+# Tenants, keyed by name (the name is the namespace). The spec is written exactly
+# as in the CRD, `team` is required. Only state what differs from the profile.
+# `adopt: true` is the only chart-level key: it sets the adopt annotation on the Tenant
+# so that it can take over an existing namespace (see docs/migration-from-helm.md).
+# Values files can be layered with several -f flags: maps merge key by key.
+tenants: {}
+  # app-production:
+  #   team: backend
+  #   adopt: true            # only while taking over an existing namespace
+  #   labels: {environment: production, tier: application}
+  #   annotations: {owner: backend-team@example.com}
+  #   quota:
+  #     requests.cpu: "16"
+  #     pods: "50"
+  #   network:
+  #     ingress:
+  #       allowSameNamespace: true
+  #       allowFromNamespaces: [ingress-nginx, monitoring]
+  #     egress:
+  #       toNamespaces: [kube-system]
+  #       toFQDNs:
+  #         - matchName: api.github.com
+  #           ports: [{port: 443, protocol: TCP}]
+  #   scheduling:
+  #     nodeSelector: {mode: Force, labels: {location: site-a}}

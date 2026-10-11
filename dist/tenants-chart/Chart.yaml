@@ -1,0 +1,10 @@
+apiVersion: v2
+name: quarters-tenants
+description: Tenants and TenantProfiles for the Quarters operator, rendered from a values file
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - kubernetes
+  - tenants
+  - namespaces
