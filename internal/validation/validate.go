@@ -160,6 +160,9 @@ func network(p *field.Path, n *quartersv1alpha1.NetworkSpec) field.ErrorList {
 			if (f.MatchName == "") == (f.MatchPattern == "") {
 				errs = append(errs, field.Invalid(fp, f.MatchName+f.MatchPattern, "set exactly one of matchName and matchPattern"))
 			}
+			if strings.ContainsAny(f.MatchName, "*?") {
+				errs = append(errs, field.Invalid(fp.Child("matchName"), f.MatchName, "wildcards are not allowed in matchName, use matchPattern"))
+			}
 		}
 	}
 	return errs

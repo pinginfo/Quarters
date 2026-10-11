@@ -58,6 +58,9 @@ func TestTenantRules(t *testing.T) {
 		{"fqdn needs exactly one", tenant("a", func(t *quartersv1alpha1.Tenant) {
 			t.Spec.Network = &quartersv1alpha1.NetworkSpec{Egress: &quartersv1alpha1.EgressSpec{ToFQDNs: []quartersv1alpha1.FQDNRule{{}}}}
 		}), "exactly one"},
+		{"wildcard in matchName", tenant("a", func(t *quartersv1alpha1.Tenant) {
+			t.Spec.Network = &quartersv1alpha1.NetworkSpec{Egress: &quartersv1alpha1.EgressSpec{ToFQDNs: []quartersv1alpha1.FQDNRule{{MatchName: "*"}}}}
+		}), "use matchPattern"},
 		{"force selector without labels", tenant("a", func(t *quartersv1alpha1.Tenant) {
 			t.Spec.Scheduling = &quartersv1alpha1.SchedulingSpec{NodeSelector: &quartersv1alpha1.NodeSelectorSpec{Mode: quartersv1alpha1.SchedulingForce}}
 		}), "at least one label"},
