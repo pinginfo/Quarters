@@ -1,0 +1,11 @@
+# Grafana dashboard as a ConfigMap. The kube-prometheus-stack / Grafana sidecar
+# loads every ConfigMap labelled grafana_dashboard=1. Apply with:
+#   kubectl apply -k config/grafana -n monitoring
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+configMapGenerator:
+- name: quarters-dashboards
+  files:
+  - quarters-overview.json

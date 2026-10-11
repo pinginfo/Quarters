@@ -1,0 +1,250 @@
+{
+  "uid": "quarters-overview",
+  "title": "Quarters - Tenants overview",
+  "description": "Fleet overview of every Quarters Tenant: phase, module health, quota pressure and operator health. Needs the operator metrics and kube-state-metrics.",
+  "tags": ["quarters", "kubernetes", "tenants"],
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "annotations": {"list": []},
+  "links": [],
+  "templating": {
+    "list": [
+      {"name": "datasource", "label": "Data source", "type": "datasource", "query": "prometheus", "current": {}, "hide": 0},
+      {
+        "name": "team", "label": "Team", "type": "query", "multi": true, "includeAll": true, "allValue": ".*",
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "definition": "label_values(quarters_tenant_info, team)",
+        "query": {"query": "label_values(quarters_tenant_info, team)", "refId": "team"},
+        "refresh": 2, "sort": 1, "current": {"selected": true, "text": "All", "value": "$__all"}
+      },
+      {
+        "name": "profile", "label": "Profile", "type": "query", "multi": true, "includeAll": true, "allValue": ".*",
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "definition": "label_values(quarters_tenant_info{team=~\"$team\"}, profile)",
+        "query": {"query": "label_values(quarters_tenant_info{team=~\"$team\"}, profile)", "refId": "profile"},
+        "refresh": 2, "sort": 1, "current": {"selected": true, "text": "All", "value": "$__all"}
+      },
+      {
+        "name": "tenant", "label": "Tenant", "type": "query", "multi": true, "includeAll": true, "allValue": ".*",
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+        "definition": "label_values(quarters_tenant_info{team=~\"$team\",profile=~\"$profile\"}, tenant)",
+        "query": {"query": "label_values(quarters_tenant_info{team=~\"$team\",profile=~\"$profile\"}, tenant)", "refId": "tenant"},
+        "refresh": 2, "sort": 1, "current": {"selected": true, "text": "All", "value": "$__all"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Tenants", "description": "Tenants matching the filters above.",
+      "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "instant": true, "expr": "count(max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) or vector(0)"}],
+      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#2a78d6"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#2a78d6", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+    },
+    {
+      "id": 2, "type": "stat", "title": "✔ Ready", "description": "Tenants whose modules are all applied.",
+      "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "instant": true, "expr": "sum(max by (tenant) (quarters_tenant_phase{phase=\"Ready\"}) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) or vector(0)"}],
+      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#0ca30c"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#0ca30c", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+    },
+    {
+      "id": 3, "type": "stat", "title": "✖ Degraded", "description": "Tenants with at least one failing module or an unresolved profile. See the table below.",
+      "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "instant": true, "expr": "sum(max by (tenant) (quarters_tenant_phase{phase=\"Degraded\"}) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) or vector(0)"}],
+      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#0ca30c", "value": null}, {"color": "#d03b3b", "value": 1}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+    },
+    {
+      "id": 4, "type": "stat", "title": "◐ Terminating", "description": "Tenants being deleted (the finalizer is applying the deletion policy).",
+      "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "instant": true, "expr": "sum(max by (tenant) (quarters_tenant_phase{phase=\"Terminating\"}) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) or vector(0)"}],
+      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#2a78d6", "value": null}, {"color": "#ec835a", "value": 1}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+    },
+    {
+      "id": 5, "type": "stat", "title": "⚠ Not reconciled", "description": "Tenants whose spec changed but the status has not caught up (metadata.generation > status.observedGeneration). Stays above 0 if the operator is down or stuck.",
+      "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "instant": true, "expr": "count((max by (tenant) (quarters_tenant_generation_lag) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) > 0) or vector(0)"}],
+      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#0ca30c", "value": null}, {"color": "#fab219", "value": 1}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+    },
+    {
+      "id": 6, "type": "stat", "title": "✖ Module errors (1h)", "description": "Failed module reconciles in the last hour, across all tenants (not filtered).",
+      "gridPos": {"x": 20, "y": 0, "w": 4, "h": 4},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "instant": true, "expr": "round(sum(increase(quarters_module_errors_total[1h]))) or vector(0)"}],
+      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#0ca30c", "value": null}, {"color": "#ec835a", "value": 1}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+    },
+    {
+      "id": 7, "type": "table", "title": "Tenants", "description": "One row per tenant, problems first. Quota columns need kube-state-metrics (kube_resourcequota); they are empty for tenants without that quota key.",
+      "gridPos": {"x": 0, "y": 4, "w": 24, "h": 12},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [
+        {"refId": "A", "instant": true, "format": "table", "expr": "max by (tenant, team, profile, deletion_policy) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})"},
+        {"refId": "B", "instant": true, "format": "table", "expr": "max by (tenant, phase) (quarters_tenant_phase{tenant=~\"$tenant\"} == 1)"},
+        {"refId": "C", "instant": true, "format": "table", "expr": "sum by (tenant) (max by (tenant, type) (quarters_tenant_condition{status=\"False\",type!~\"Ready|ProfileResolved\",tenant=~\"$tenant\"})) or (max by (tenant) (quarters_tenant_info{tenant=~\"$tenant\"}) * 0)"},
+        {"refId": "D", "instant": true, "format": "table", "expr": "100 * max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"used\",resource=\"pods\"}) / sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"pods\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))"},
+        {"refId": "E", "instant": true, "format": "table", "expr": "100 * max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"used\",resource=\"requests.cpu\"}) / sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.cpu\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))"},
+        {"refId": "F", "instant": true, "format": "table", "expr": "100 * max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"used\",resource=\"requests.memory\"}) / sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.memory\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))"},
+        {"refId": "G", "instant": true, "format": "table", "expr": "time() - max by (tenant) (quarters_tenant_condition_last_transition_timestamp_seconds{type=\"Ready\",tenant=~\"$tenant\"})"}
+      ],
+      "transformations": [
+        {"id": "joinByField", "options": {"byField": "tenant", "mode": "outer"}},
+        {"id": "filterFieldsByName", "options": {"include": {"pattern": "^(tenant|team|profile|deletion_policy|phase|Value #[CDEFG])$"}}},
+        {"id": "organize", "options": {
+          "indexByName": {"tenant": 0, "team": 1, "profile": 2, "phase": 3, "Value #C": 4, "Value #G": 5, "Value #D": 6, "Value #E": 7, "Value #F": 8, "deletion_policy": 9},
+          "renameByName": {"tenant": "Tenant", "team": "Team", "profile": "Profile", "phase": "Phase", "Value #C": "Failing modules", "Value #G": "In this state for", "Value #D": "Pods quota", "Value #E": "CPU requests quota", "Value #F": "Memory requests quota", "deletion_policy": "On delete"}
+        }}
+      ],
+      "fieldConfig": {
+        "defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "filterable": true}, "noValue": "–"},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Phase"}, "properties": [
+            {"id": "custom.cellOptions", "value": {"type": "color-text"}},
+            {"id": "mappings", "value": [{"type": "value", "options": {
+              "Ready": {"text": "✔ Ready", "color": "#0ca30c", "index": 0},
+              "Degraded": {"text": "✖ Degraded", "color": "#d03b3b", "index": 1},
+              "Terminating": {"text": "◐ Terminating", "color": "#ec835a", "index": 2}}}]}
+          ]},
+          {"matcher": {"id": "byName", "options": "Failing modules"}, "properties": [
+            {"id": "decimals", "value": 0},
+            {"id": "custom.cellOptions", "value": {"type": "color-text"}},
+            {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "text", "value": null}, {"color": "#d03b3b", "value": 1}]}},
+            {"id": "color", "value": {"mode": "thresholds"}}
+          ]},
+          {"matcher": {"id": "byName", "options": "In this state for"}, "properties": [{"id": "unit", "value": "dtdurations"}]},
+          {"matcher": {"id": "byRegexp", "options": ".*quota$"}, "properties": [
+            {"id": "unit", "value": "percent"},
+            {"id": "decimals", "value": 0},
+            {"id": "min", "value": 0},
+            {"id": "max", "value": 100},
+            {"id": "custom.cellOptions", "value": {"type": "gauge", "mode": "basic", "valueDisplayMode": "text"}},
+            {"id": "thresholds", "value": {"mode": "absolute", "steps": [{"color": "#2a78d6", "value": null}, {"color": "#fab219", "value": 80}, {"color": "#d03b3b", "value": 95}]}},
+            {"id": "color", "value": {"mode": "thresholds"}}
+          ]}
+        ]
+      },
+      "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false}, "sortBy": [{"displayName": "Failing modules", "desc": true}]}
+    },
+    {
+      "id": 8, "type": "bargauge", "title": "Tenants per team",
+      "gridPos": {"x": 0, "y": 16, "w": 12, "h": 7},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "instant": true, "legendFormat": "{{team}}", "expr": "count by (team) (max by (tenant, team) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"}))"}],
+      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "min": 0, "color": {"mode": "fixed", "fixedColor": "#2a78d6"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#2a78d6", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "horizontal", "displayMode": "basic", "valueMode": "text", "showUnfilled": true, "namePlacement": "left", "sizing": "auto", "minVizHeight": 16}
+    },
+    {
+      "id": 9, "type": "bargauge", "title": "Tenants per profile",
+      "gridPos": {"x": 12, "y": 16, "w": 12, "h": 7},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "instant": true, "legendFormat": "{{profile}}", "expr": "count by (profile) (max by (tenant, profile) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"}))"}],
+      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "min": 0, "color": {"mode": "fixed", "fixedColor": "#2a78d6"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#2a78d6", "value": null}]}}, "overrides": []},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "orientation": "horizontal", "displayMode": "basic", "valueMode": "text", "showUnfilled": true, "namePlacement": "left", "sizing": "auto", "minVizHeight": 16}
+    },
+    {
+      "id": 10, "type": "table", "title": "Module status per tenant", "description": "✔ applied, ✖ failed, – skipped (an earlier critical module failed, usually the namespace). Open the Tenant with kubectl describe tenant <name> for the message.",
+      "gridPos": {"x": 0, "y": 23, "w": 24, "h": 9},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "instant": true, "format": "table", "expr": "(max by (tenant, type) (quarters_tenant_condition{status=\"True\",tenant=~\"$tenant\"}) + 2 * max by (tenant, type) (quarters_tenant_condition{status=\"Unknown\",tenant=~\"$tenant\"})) * on (tenant) group_left () max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})"}],
+      "transformations": [
+        {"id": "groupingToMatrix", "options": {"columnField": "type", "rowField": "tenant", "valueField": "Value", "emptyValue": "null"}}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "center", "cellOptions": {"type": "color-text"}},
+          "noValue": "–",
+          "mappings": [{"type": "value", "options": {
+            "1": {"text": "✔ ok", "color": "#0ca30c", "index": 0},
+            "0": {"text": "✖ failed", "color": "#d03b3b", "index": 1},
+            "2": {"text": "– skipped", "color": "#898989", "index": 2}}}]
+        },
+        "overrides": [{"matcher": {"id": "byName", "options": "tenant\\type"}, "properties": [
+          {"id": "custom.align", "value": "left"},
+          {"id": "custom.cellOptions", "value": {"type": "auto"}},
+          {"id": "mappings", "value": []}
+        ]}]
+      },
+      "options": {"showHeader": true, "cellHeight": "sm", "footer": {"show": false}}
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Tenants by phase",
+      "gridPos": {"x": 0, "y": 32, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "legendFormat": "{{phase}}", "expr": "sum by (phase) (max by (tenant, phase) (quarters_tenant_phase) * on (tenant) group_left () max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"}))"}],
+      "fieldConfig": {
+        "defaults": {"unit": "none", "decimals": 0, "min": 0, "custom": {"drawStyle": "line", "lineInterpolation": "stepAfter", "lineWidth": 2, "fillOpacity": 0, "showPoints": "never", "axisSoftMin": 0}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Ready"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#0ca30c"}}]},
+          {"matcher": {"id": "byName", "options": "Degraded"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#d03b3b"}}]},
+          {"matcher": {"id": "byName", "options": "Terminating"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#ec835a"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}
+    },
+    {
+      "id": 12, "type": "timeseries", "title": "Reconciles per second, by result",
+      "description": "Operator controller activity. A steady 'error' line means a tenant keeps failing; the table above shows which one.",
+      "gridPos": {"x": 12, "y": 32, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "legendFormat": "{{result}}", "expr": "sum by (result) (rate(controller_runtime_reconcile_total{controller=\"tenant\"}[5m]))"}],
+      "fieldConfig": {
+        "defaults": {"unit": "ops", "min": 0, "custom": {"drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "fillOpacity": 0, "showPoints": "never"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "success"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#2a78d6"}}]},
+          {"matcher": {"id": "byName", "options": "requeue_after"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#1baf7a"}}]},
+          {"matcher": {"id": "byName", "options": "requeue"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#eb6834"}}]},
+          {"matcher": {"id": "byName", "options": "error"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#d03b3b"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}
+    },
+    {
+      "id": 13, "type": "timeseries", "title": "Module errors per second",
+      "description": "Which feature module is failing, across tenants.",
+      "gridPos": {"x": 0, "y": 40, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "legendFormat": "{{module}}", "expr": "sum by (module) (rate(quarters_module_errors_total[5m]))"}],
+      "fieldConfig": {
+        "defaults": {"unit": "ops", "min": 0, "custom": {"drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "fillOpacity": 0, "showPoints": "never"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Namespace"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#2a78d6"}}]},
+          {"matcher": {"id": "byName", "options": "Quota"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#eb6834"}}]},
+          {"matcher": {"id": "byName", "options": "LimitRange"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#1baf7a"}}]},
+          {"matcher": {"id": "byName", "options": "Network"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#eda100"}}]},
+          {"matcher": {"id": "byName", "options": "Scheduling"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#e87ba4"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}
+    },
+    {
+      "id": 14, "type": "timeseries", "title": "Module reconcile duration (p95)",
+      "gridPos": {"x": 12, "y": 40, "w": 12, "h": 8},
+      "datasource": {"type": "prometheus", "uid": "${datasource}"},
+      "targets": [{"refId": "A", "legendFormat": "{{module}}", "expr": "histogram_quantile(0.95, sum by (le, module) (rate(quarters_module_reconcile_duration_seconds_bucket[5m])))"}],
+      "fieldConfig": {
+        "defaults": {"unit": "s", "min": 0, "custom": {"drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "fillOpacity": 0, "showPoints": "never"}},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Namespace"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#2a78d6"}}]},
+          {"matcher": {"id": "byName", "options": "Quota"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#eb6834"}}]},
+          {"matcher": {"id": "byName", "options": "LimitRange"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#1baf7a"}}]},
+          {"matcher": {"id": "byName", "options": "Network"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#eda100"}}]},
+          {"matcher": {"id": "byName", "options": "Scheduling"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "#e87ba4"}}]}
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}}
+    }
+  ]
+}

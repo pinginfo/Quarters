@@ -113,7 +113,32 @@ make test                 # unit tests + envtest against a real API server
 
 `test/crds/` holds minimal stand-ins for the Cilium and Gatekeeper CRDs used by envtest.
 
-## Metrics
+## Metrics and dashboard
 
-Besides the controller-runtime metrics: `quarters_module_reconcile_duration_seconds{module}`,
-`quarters_module_errors_total{module}`.
+Besides the controller-runtime metrics, Quarters exports:
+
+| Metric | Labels | Meaning |
+|---|---|---|
+| `quarters_tenant_info` | tenant, team, profile, deletion_policy | always 1 |
+| `quarters_tenant_phase` | tenant, phase | 1 for the current phase (Ready, Degraded, Terminating) |
+| `quarters_tenant_condition` | tenant, type, status | 1 for the current status of each condition |
+| `quarters_tenant_condition_last_transition_timestamp_seconds` | tenant, type | when a condition last changed |
+| `quarters_tenant_generation_lag` | tenant | spec generation not yet reconciled |
+| `quarters_module_reconcile_duration_seconds` | module | histogram |
+| `quarters_module_errors_total` | module | counter |
+
+The tenant metrics are read from the informer cache at scrape time and only the elected leader
+answers, so deleted tenants disappear at once and each tenant appears once.
+
+The Grafana dashboard `config/grafana/quarters-overview.json` is for DevOps: the fleet (counts by phase, a table of every tenant with problems
+  first, module status per tenant, operator health). Filters: team, profile, tenant.
+Load it by importing the JSON in Grafana, or with the Grafana sidecar:
+
+```sh
+kubectl apply -k config/grafana -n monitoring     # ConfigMap labelled grafana_dashboard=1
+```
+
+It needs Prometheus to scrape the operator, and kube-state-metrics for the quota columns
+(`kube_resourcequota`). With prometheus-operator, enable the chart's ServiceMonitor
+(`--set prometheus.enabled=true`). The metrics endpoint is HTTPS and authenticated, so give the
+Prometheus service account the `quarters-metrics-reader` ClusterRole.

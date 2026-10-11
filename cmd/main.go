@@ -21,6 +21,7 @@ import (
 
 	quartersv1alpha1 "github.com/pinginfo/quarters/api/v1alpha1"
 	"github.com/pinginfo/quarters/internal/controller"
+	"github.com/pinginfo/quarters/internal/metrics"
 	webhookv1alpha1 "github.com/pinginfo/quarters/internal/webhook/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
@@ -189,6 +190,17 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	(&metrics.TenantCollector{
+		Reader: mgr.GetCache(),
+		Elected: func() bool {
+			select {
+			case <-mgr.Elected():
+				return true
+			default:
+				return false
+			}
+		},
+	}).Register()
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
