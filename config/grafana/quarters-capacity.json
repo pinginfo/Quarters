@@ -1,0 +1,1957 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "description": "How the cluster is divided between tenants: quota allowed per tenant and team as % of the whole cluster, pressure inside each quota, and reserved versus really used. Needs the Quarters metrics, kube-state-metrics and cAdvisor.",
+  "editable": true,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Sum of node allocatable CPU (kube-state-metrics).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_allocatable{resource=\"cpu\"})",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "CPU cores allocatable",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Sum of node allocatable memory.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 3,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_allocatable{resource=\"memory\"})",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Memory allocatable",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Sum of node allocatable pod slots.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 6,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_allocatable{resource=\"pods\"})",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Pods allocatable",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Sum of the requests.cpu quotas of the tenants shown, as % of allocatable CPU. Above 100% the quotas promise more than the cluster has: fine if you overcommit on purpose.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              },
+              {
+                "color": "#fab219",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 9,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "100 * (sum(max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\")) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"}))) / scalar(sum(kube_node_status_allocatable{resource=\"cpu\"}))",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "CPU promised to tenants",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Sum of the requests.memory quotas, as % of allocatable memory.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              },
+              {
+                "color": "#fab219",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 0
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "100 * (sum(max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\")) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"}))) / scalar(sum(kube_node_status_allocatable{resource=\"memory\"}))",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Memory promised to tenants",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Sum of the pods quotas, as % of allocatable pod slots.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              },
+              {
+                "color": "#fab219",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 15,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "100 * (sum(max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"pods\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\")) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"}))) / scalar(sum(kube_node_status_allocatable{resource=\"pods\"}))",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Pods promised to tenants",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "What pods actually reserve right now, as % of allocatable CPU. This is the scheduler's view.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              },
+              {
+                "color": "#fab219",
+                "value": 80
+              },
+              {
+                "color": "#d03b3b",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 0
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "100 * (sum(sum by (namespace) (kube_pod_container_resource_requests{resource=\"cpu\",namespace=~\"$tenant\"} * on (namespace, pod) group_left () (kube_pod_status_phase{phase=\"Running\",namespace=~\"$tenant\"} == 1)))) / scalar(sum(kube_node_status_allocatable{resource=\"cpu\"}))",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "CPU requested by running pods",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Tenants with no requests.cpu quota: nothing limits what they can reserve.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#0ca30c",
+                "value": null
+              },
+              {
+                "color": "#fab219",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 0
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "count(max by (tenant) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"}) unless on (tenant) max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))) or vector(0)",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "⚠ Tenants without CPU quota",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "requests.cpu quota of each tenant divided by the allocatable CPU of the whole cluster.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "min": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 9,
+      "options": {
+        "displayMode": "basic",
+        "minVizHeight": 16,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "targets": [
+        {
+          "expr": "sort_desc(100 * (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))) / scalar(sum(kube_node_status_allocatable{resource=\"cpu\"})))",
+          "instant": true,
+          "legendFormat": "{{tenant}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU allowed per tenant (% of cluster)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "requests.memory quota of each tenant divided by the allocatable memory of the whole cluster.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "min": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "id": 10,
+      "options": {
+        "displayMode": "basic",
+        "minVizHeight": 16,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "targets": [
+        {
+          "expr": "sort_desc(100 * (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))) / scalar(sum(kube_node_status_allocatable{resource=\"memory\"})))",
+          "instant": true,
+          "legendFormat": "{{tenant}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory allowed per tenant (% of cluster)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Same, summed per team.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "min": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 11,
+      "options": {
+        "displayMode": "basic",
+        "minVizHeight": 16,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "targets": [
+        {
+          "expr": "sort_desc(100 * (sum by (team) (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\")) * on (tenant) group_left (team) max by (tenant, team) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"}))) / scalar(sum(kube_node_status_allocatable{resource=\"cpu\"})))",
+          "instant": true,
+          "legendFormat": "{{team}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU allowed per team (% of cluster)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Same, summed per team.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "min": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "id": 12,
+      "options": {
+        "displayMode": "basic",
+        "minVizHeight": 16,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "targets": [
+        {
+          "expr": "sort_desc(100 * (sum by (team) (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\")) * on (tenant) group_left (team) max by (tenant, team) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"}))) / scalar(sum(kube_node_status_allocatable{resource=\"memory\"})))",
+          "instant": true,
+          "legendFormat": "{{team}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory allowed per team (% of cluster)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "What each tenant may reserve (ResourceQuota hard values) and its share of the whole cluster. Sort by any column.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true
+          },
+          "noValue": "–"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU requests"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU limits"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Memory requests"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Memory limits"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Storage requests"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pods"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PVCs"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU % of cluster"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "gauge",
+                  "valueDisplayMode": "text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#2a78d6",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Memory % of cluster"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "gauge",
+                  "valueDisplayMode": "text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#2a78d6",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Pods % of cluster"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "gauge",
+                  "valueDisplayMode": "text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#2a78d6",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 13,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "CPU % of cluster"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "max by (tenant, team, profile) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"})",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "100 * (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))) / scalar(sum(kube_node_status_allocatable{resource=\"cpu\"}))",
+          "format": "table",
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"limits.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "100 * (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))) / scalar(sum(kube_node_status_allocatable{resource=\"memory\"}))",
+          "format": "table",
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"limits.memory\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "G"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"pods\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "H"
+        },
+        {
+          "expr": "100 * (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"pods\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))) / scalar(sum(kube_node_status_allocatable{resource=\"pods\"}))",
+          "format": "table",
+          "instant": true,
+          "refId": "I"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.storage\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "J"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"persistentvolumeclaims\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "K"
+        }
+      ],
+      "title": "Quota allowed per tenant",
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "tenant",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "^(tenant|team|profile|Value #[B-K])$"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "Value #B": 3,
+              "Value #C": 4,
+              "Value #D": 5,
+              "Value #E": 6,
+              "Value #F": 7,
+              "Value #G": 8,
+              "Value #H": 9,
+              "Value #I": 10,
+              "Value #J": 11,
+              "Value #K": 12,
+              "profile": 2,
+              "team": 1,
+              "tenant": 0
+            },
+            "renameByName": {
+              "Value #B": "CPU requests",
+              "Value #C": "CPU % of cluster",
+              "Value #D": "CPU limits",
+              "Value #E": "Memory requests",
+              "Value #F": "Memory % of cluster",
+              "Value #G": "Memory limits",
+              "Value #H": "Pods",
+              "Value #I": "Pods % of cluster",
+              "Value #J": "Storage requests",
+              "Value #K": "PVCs",
+              "profile": "Profile",
+              "team": "Team",
+              "tenant": "Tenant"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "requests.cpu used / hard per tenant. Close to 100% the tenant cannot start more pods.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "max": 100,
+          "min": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              },
+              {
+                "color": "#fab219",
+                "value": 80
+              },
+              {
+                "color": "#d03b3b",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 0,
+        "y": 32
+      },
+      "id": 14,
+      "options": {
+        "displayMode": "basic",
+        "minVizHeight": 16,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "targets": [
+        {
+          "expr": "sort_desc(100 * (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"used\",resource=\"requests.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))) / (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))))",
+          "instant": true,
+          "legendFormat": "{{tenant}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU quota used (% of own quota)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "requests.memory used / hard per tenant.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "max": 100,
+          "min": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              },
+              {
+                "color": "#fab219",
+                "value": 80
+              },
+              {
+                "color": "#d03b3b",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 8,
+        "y": 32
+      },
+      "id": 15,
+      "options": {
+        "displayMode": "basic",
+        "minVizHeight": 16,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "targets": [
+        {
+          "expr": "sort_desc(100 * (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"used\",resource=\"requests.memory\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))) / (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))))",
+          "instant": true,
+          "legendFormat": "{{tenant}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory quota used (% of own quota)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "pods used / hard per tenant.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "max": 100,
+          "min": 0,
+          "noValue": "–",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#2a78d6",
+                "value": null
+              },
+              {
+                "color": "#fab219",
+                "value": 80
+              },
+              {
+                "color": "#d03b3b",
+                "value": 95
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 8,
+        "x": 16,
+        "y": 32
+      },
+      "id": 16,
+      "options": {
+        "displayMode": "basic",
+        "minVizHeight": 16,
+        "namePlacement": "left",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "targets": [
+        {
+          "expr": "sort_desc(100 * (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"used\",resource=\"pods\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))) / (max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"pods\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))))",
+          "instant": true,
+          "legendFormat": "{{tenant}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Pods quota used (% of own quota)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Requests of running pods against what they really consume (cAdvisor). Low efficiency means reserved capacity nobody uses; it is where quotas can be reduced. Needs kube-state-metrics and cAdvisor.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true
+          },
+          "noValue": "–"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU reserved"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Memory reserved"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Memory used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU efficiency"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "gauge",
+                  "valueDisplayMode": "text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#2a78d6",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Memory efficiency"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "gauge",
+                  "valueDisplayMode": "text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#2a78d6",
+                      "value": null
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      },
+      "id": 17,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "CPU efficiency"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "max by (tenant, team) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"})",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (kube_pod_container_resource_requests{resource=\"cpu\",namespace=~\"$tenant\"} * on (namespace, pod) group_left () (kube_pod_status_phase{phase=\"Running\",namespace=~\"$tenant\"} == 1)), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\",namespace=~\"$tenant\"}[5m])), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "100 * max by (tenant) (label_replace(sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\",namespace=~\"$tenant\"}[5m])), \"tenant\", \"$1\", \"namespace\", \"(.*)\")) / max by (tenant) (label_replace(sum by (namespace) (kube_pod_container_resource_requests{resource=\"cpu\",namespace=~\"$tenant\"} * on (namespace, pod) group_left () (kube_pod_status_phase{phase=\"Running\",namespace=~\"$tenant\"} == 1)), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (kube_pod_container_resource_requests{resource=\"memory\",namespace=~\"$tenant\"} * on (namespace, pod) group_left () (kube_pod_status_phase{phase=\"Running\",namespace=~\"$tenant\"} == 1)), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "max by (tenant) (label_replace(sum by (namespace) (container_memory_working_set_bytes{container!=\"\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "100 * max by (tenant) (label_replace(sum by (namespace) (container_memory_working_set_bytes{container!=\"\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\")) / max by (tenant) (label_replace(sum by (namespace) (kube_pod_container_resource_requests{resource=\"memory\",namespace=~\"$tenant\"} * on (namespace, pod) group_left () (kube_pod_status_phase{phase=\"Running\",namespace=~\"$tenant\"} == 1)), \"tenant\", \"$1\", \"namespace\", \"(.*)\"))",
+          "format": "table",
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "title": "Reserved versus really used",
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "tenant",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "pattern": "^(tenant|team|Value #[B-G])$"
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "Value #B": 2,
+              "Value #C": 3,
+              "Value #D": 4,
+              "Value #E": 5,
+              "Value #F": 6,
+              "Value #G": 7,
+              "team": 1,
+              "tenant": 0
+            },
+            "renameByName": {
+              "Value #B": "CPU reserved",
+              "Value #C": "CPU used",
+              "Value #D": "CPU efficiency",
+              "Value #E": "Memory reserved",
+              "Value #F": "Memory used",
+              "Value #G": "Memory efficiency",
+              "team": "Team",
+              "tenant": "Tenant"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Cores. The gap between 'Allowed by quotas' and 'Requested' is headroom tenants have not used yet; the gap between 'Requested' and 'Really used' is waste.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Allocatable"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#2a78d6",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Allowed by quotas"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#eb6834",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requested by running pods"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1baf7a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Really used"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#eda100",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 52
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_allocatable{resource=\"cpu\"})",
+          "legendFormat": "Allocatable",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\")) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"}))",
+          "legendFormat": "Allowed by quotas",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(sum by (namespace) (kube_pod_container_resource_requests{resource=\"cpu\",namespace=~\"$tenant\"} * on (namespace, pod) group_left () (kube_pod_status_phase{phase=\"Running\",namespace=~\"$tenant\"} == 1)))",
+          "legendFormat": "Requested by running pods",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\",namespace=~\"$tenant\"}[5m])))",
+          "legendFormat": "Really used",
+          "refId": "D"
+        }
+      ],
+      "title": "CPU: capacity, quotas, reservations and use",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Bytes. Same reading as the CPU chart.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "min": 0,
+          "unit": "bytes"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Allocatable"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#2a78d6",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Allowed by quotas"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#eb6834",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Requested by running pods"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#1baf7a",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Really used"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#eda100",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 52
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_allocatable{resource=\"memory\"})",
+          "legendFormat": "Allocatable",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(max by (tenant) (label_replace(sum by (namespace) (kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"$tenant\"}), \"tenant\", \"$1\", \"namespace\", \"(.*)\")) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",tenant=~\"$tenant\"}))",
+          "legendFormat": "Allowed by quotas",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(sum by (namespace) (kube_pod_container_resource_requests{resource=\"memory\",namespace=~\"$tenant\"} * on (namespace, pod) group_left () (kube_pod_status_phase{phase=\"Running\",namespace=~\"$tenant\"} == 1)))",
+          "legendFormat": "Requested by running pods",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(sum by (namespace) (container_memory_working_set_bytes{container!=\"\",namespace=~\"$tenant\"}))",
+          "legendFormat": "Really used",
+          "refId": "D"
+        }
+      ],
+      "title": "Memory: capacity, quotas, reservations and use",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "tags": [
+    "quarters",
+    "kubernetes",
+    "capacity"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "label": "Data source",
+        "name": "datasource",
+        "query": "prometheus",
+        "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(quarters_tenant_info, team)",
+        "includeAll": true,
+        "label": "Team",
+        "multi": true,
+        "name": "team",
+        "query": {
+          "query": "label_values(quarters_tenant_info, team)",
+          "refId": "team"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "definition": "label_values(quarters_tenant_info{team=~\"$team\"}, tenant)",
+        "includeAll": true,
+        "label": "Tenant",
+        "multi": true,
+        "name": "tenant",
+        "query": {
+          "query": "label_values(quarters_tenant_info{team=~\"$team\"}, tenant)",
+          "refId": "tenant"
+        },
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "Quarters - Capacity and quotas",
+  "uid": "quarters-capacity",
+  "version": 1
+}

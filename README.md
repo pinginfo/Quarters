@@ -130,15 +130,25 @@ Besides the controller-runtime metrics, Quarters exports:
 The tenant metrics are read from the informer cache at scrape time and only the elected leader
 answers, so deleted tenants disappear at once and each tenant appears once.
 
-The Grafana dashboard `config/grafana/quarters-overview.json` is for DevOps: the fleet (counts by phase, a table of every tenant with problems
+Two Grafana dashboards are in `config/grafana`:
+
+- `quarters-overview.json`, for DevOps: the fleet (counts by phase, a table of every tenant with problems
   first, module status per tenant, operator health). Filters: team, profile, tenant.
-Load it by importing the JSON in Grafana, or with the Grafana sidecar:
+- `quarters-capacity.json`, for the cluster owner: how the cluster is divided. Quota allowed per tenant
+  and team as % of the whole cluster (CPU, memory, pods), how much is promised in total against what
+  nodes can offer, how full each tenant's own quota is, and reserved versus really used (where quotas
+  can be reduced).
+
+Load them by importing the JSON in Grafana, or with the Grafana sidecar:
 
 ```sh
 kubectl apply -k config/grafana -n monitoring     # ConfigMap labelled grafana_dashboard=1
 ```
 
-It needs Prometheus to scrape the operator, and kube-state-metrics for the quota columns
-(`kube_resourcequota`). With prometheus-operator, enable the chart's ServiceMonitor
+Both need Prometheus to scrape the operator. The quota columns of the first and most of the second need
+kube-state-metrics (`kube_resourcequota`, `kube_node_status_allocatable`, pod requests); "really used"
+needs cAdvisor (`container_*`, scraped from the kubelet by default in kube-prometheus-stack).
+Capacity per node location would need kube-state-metrics to export your node label
+(`--metric-labels-allowlist=nodes=[location]`); the dashboards do not assume it. With prometheus-operator, enable the chart's ServiceMonitor
 (`--set prometheus.enabled=true`). The metrics endpoint is HTTPS and authenticated, so give the
 Prometheus service account the `quarters-metrics-reader` ClusterRole.

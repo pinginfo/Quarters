@@ -9,3 +9,4 @@ configMapGenerator:
 - name: quarters-dashboards
   files:
   - quarters-overview.json
+  - quarters-capacity.json
