@@ -3,7 +3,9 @@
 A Kubernetes operator that manages namespaces. One `Tenant` resource creates a
 namespace and everything the platform configures inside it: labels, Pod
 Security Admission, quota, limit range, Cilium network policies and node
-placement through OPA Gatekeeper. It replaces the `ns-config` Helm chart.
+placement through OPA Gatekeeper. It replaces `ns-config`, an internal Helm chart that created each namespace
+from a `values.yaml` block (quota, limit range, Pod Security labels and
+Cilium network policies).
 
 - API group `quarters.pinginfo.io/v1alpha1`: `Tenant` and `TenantProfile`, both cluster-scoped.
 - Built with Go and Kubebuilder (controller-runtime). Target: Kubernetes 1.36, Cilium 1.19, Gatekeeper, Talos.

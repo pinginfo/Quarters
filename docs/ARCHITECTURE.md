@@ -6,7 +6,7 @@ API group: `quarters.pinginfo.io` (placeholder, rename freely).
 Target platform: Kubernetes 1.36.x on Talos, Cilium 1.19.6, latest Gatekeeper (mutation required).
 
 ## 1. Goals
-- Replace the `ns-config` Helm chart: one `Tenant` CR per namespace creates the namespace and everything inside it.
+- Replace `ns-config`, an internal Helm chart that built each namespace from a `values.yaml` block: one `Tenant` CR per namespace creates the namespace and everything inside it.
 - Extensible: a new feature (labeling, security, scheduling) is one new Go package and one registry line.
 - Production from day one: HA, validating webhook, metrics, conditions, tests, adoption of Helm-managed namespaces.
 
