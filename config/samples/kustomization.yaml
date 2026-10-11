@@ -1,0 +1,4 @@
+resources:
+- profile-default.yaml
+- tenants.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

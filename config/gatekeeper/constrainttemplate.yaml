@@ -1,0 +1,68 @@
+# Generic template used by the scheduling module in Allow mode. Install it once
+# (after Gatekeeper); Quarters then creates one QuartersScheduling constraint
+# per Tenant. Rego is written in the classic syntax accepted by all Gatekeeper
+# releases.
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: quartersscheduling
+  annotations:
+    description: >-
+      Rejects pods whose nodeSelector or tolerations are outside the set
+      allowed for their namespace.
+spec:
+  crd:
+    spec:
+      names:
+        kind: QuartersScheduling
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            checkNodeSelector:
+              type: boolean
+            nodeSelector:
+              description: Node labels a pod may select. A pod may only use these values for these keys.
+              type: object
+              additionalProperties:
+                type: string
+            checkTolerations:
+              type: boolean
+            tolerations:
+              description: Tolerations a pod may carry. node.kubernetes.io/* tolerations added by Kubernetes are always accepted.
+              type: array
+              items:
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package quartersscheduling
+
+        violation[{"msg": msg}] {
+          input.parameters.checkNodeSelector
+          allowed := input.parameters.nodeSelector[key]
+          value := input.review.object.spec.nodeSelector[key]
+          value != allowed
+          msg := sprintf("nodeSelector %v=%v is not allowed here, only %v=%v", [key, value, key, allowed])
+        }
+
+        violation[{"msg": msg}] {
+          input.parameters.checkTolerations
+          t := input.review.object.spec.tolerations[_]
+          not system_toleration(t)
+          not allowed_toleration(t)
+          msg := sprintf("toleration %v is not allowed in this namespace", [t])
+        }
+
+        system_toleration(t) {
+          startswith(t.key, "node.kubernetes.io/")
+        }
+
+        allowed_toleration(t) {
+          a := input.parameters.tolerations[_]
+          object.get(a, "key", "") == object.get(t, "key", "")
+          object.get(a, "operator", "Equal") == object.get(t, "operator", "Equal")
+          object.get(a, "value", "") == object.get(t, "value", "")
+          object.get(a, "effect", "") == object.get(t, "effect", "")
+        }

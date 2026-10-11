@@ -1,0 +1,15 @@
+# Keep one replica running during node drains. With the validating webhook set
+# to failurePolicy=Fail, losing every replica blocks Tenant changes.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: controller-manager
+  namespace: system
+  labels:
+    app.kubernetes.io/name: quarters
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+      app.kubernetes.io/name: quarters

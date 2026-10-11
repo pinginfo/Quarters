@@ -1,0 +1,16 @@
+# Pin a tenant to one location. Labels and tolerations are generic: any key works,
+# and each has its own mode (Force, Allow or Disabled).
+apiVersion: quarters.pinginfo.io/v1alpha1
+kind: Tenant
+metadata:
+  name: media-site-a
+spec:
+  team: media
+  scheduling:
+    nodeSelector:
+      mode: Force                 # every pod gets location=site-a, whatever it asked for
+      labels: {location: site-a}
+    tolerations:
+      mode: Allow                 # pods may tolerate this taint, and nothing else
+      items:
+        - {key: dedicated, operator: Equal, value: site-a, effect: NoSchedule}

@@ -1,0 +1,35 @@
+# The old values.yaml "defaults" block, plus the platform baseline.
+apiVersion: quarters.pinginfo.io/v1alpha1
+kind: TenantProfile
+metadata:
+  name: default
+spec:
+  quota:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    requests.storage: 20Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+    pods: "20"
+    services: "10"
+    replicationcontrollers: "10"
+    count/deployments.apps: "10"
+    count/statefulsets.apps: "5"      # the chart had a typo here and never applied it
+    count/daemonsets.apps: "0"
+    count/jobs.batch: "10"
+    count/cronjobs.batch: "5"
+    configmaps: "20"
+    secrets: "20"
+    persistentvolumeclaims: "5"
+  limitRange:
+    default: {cpu: 100m, memory: 128Mi}
+    defaultRequest: {cpu: 100m, memory: 128Mi}
+  # Talos enforces baseline cluster-wide; warn/audit show what restricted would break.
+  podSecurity:
+    enforce: baseline
+    audit: restricted
+    warn: restricted
+  # Nothing is forced until a Tenant asks for it.
+  scheduling:
+    nodeSelector: {mode: Disabled}
+    tolerations: {mode: Disabled}

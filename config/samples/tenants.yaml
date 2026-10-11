@@ -1,0 +1,65 @@
+# The four namespaces of the old ns-config chart.
+---
+apiVersion: quarters.pinginfo.io/v1alpha1
+kind: Tenant
+metadata:
+  name: media-test
+spec:
+  team: media
+  network:
+    ingress: {allowSameNamespace: true, allowCiliumIngress: true}
+    egress:
+      toNamespaces: [kube-system, shared-services]
+      toCIDRs:
+        - cidr: 0.0.0.0/0   # allows everything: review, it defeats the namespace list above
+---
+apiVersion: quarters.pinginfo.io/v1alpha1
+kind: Tenant
+metadata:
+  name: app-production
+spec:
+  team: backend
+  deletionPolicy: Retain
+  labels: {environment: production, tier: application}
+  annotations: {owner: backend-team@example.com, cost-center: cc-1001}
+  quota:
+    requests.cpu: "16"
+    requests.memory: 32Gi
+    requests.storage: 200Gi
+    limits.cpu: "32"
+    limits.memory: 64Gi
+    pods: "50"
+    services: "20"
+    configmaps: "50"
+    secrets: "50"            # the chart had "50h", which is not a quantity
+    persistentvolumeclaims: "20"
+  network:
+    ingress:
+      allowSameNamespace: true
+      allowFromNamespaces: [ingress-nginx, monitoring]
+    egress:
+      toNamespaces: [kube-system, shared-services]
+      toCIDRs:
+        - cidr: 0.0.0.0/0
+          except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16]
+      toFQDNs:
+        - matchName: api.github.com
+          ports: [{port: 443, protocol: TCP}]
+        - matchPattern: "*.example.com"
+          ports: [{port: 443, protocol: TCP}]
+---
+apiVersion: quarters.pinginfo.io/v1alpha1
+kind: Tenant
+metadata:
+  name: empty-test
+spec:
+  team: platform
+  network:
+    ingress: {allowCiliumIngress: true}
+---
+apiVersion: quarters.pinginfo.io/v1alpha1
+kind: Tenant
+metadata:
+  name: empty-prod
+spec:
+  team: platform

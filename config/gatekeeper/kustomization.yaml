@@ -1,0 +1,3 @@
+# Install after Gatekeeper, before the first Tenant that uses scheduling mode Allow.
+resources:
+- constrainttemplate.yaml
