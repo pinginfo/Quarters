@@ -1405,6 +1405,7 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --health-probe-bind-address=:8081
+        - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         - --webhook-port=9443
         command:
@@ -1444,6 +1445,9 @@ spec:
             - ALL
           readOnlyRootFilesystem: true
         volumeMounts:
+        - mountPath: /tmp/k8s-metrics-server/metrics-certs
+          name: metrics-certs
+          readOnly: true
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: webhook-certs
           readOnly: true
@@ -1462,6 +1466,17 @@ spec:
         topologyKey: kubernetes.io/hostname
         whenUnsatisfiable: DoNotSchedule
       volumes:
+      - name: metrics-certs
+        secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+          optional: false
+          secretName: metrics-server-cert
       - name: webhook-certs
         secret:
           secretName: webhook-server-cert

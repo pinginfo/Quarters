@@ -90,6 +90,9 @@ spec:
         {{- range .Values.manager.args }}
         - {{ tpl . $ }}
         {{- end }}
+        {{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}
+        - --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs
+        {{- end }}
         {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
         - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         {{- end }}
@@ -137,6 +140,11 @@ spec:
           {{- if .Values.manager.extraVolumeMounts }}
           {{- toYaml .Values.manager.extraVolumeMounts | nindent 10 }}
           {{- end }}
+          {{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}
+          - mountPath: /tmp/k8s-metrics-server/metrics-certs
+            name: metrics-certs
+            readOnly: true
+          {{- end }}
           {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
           - mountPath: /tmp/k8s-webhook-server/serving-certs
             name: webhook-certs
@@ -158,6 +166,19 @@ spec:
       volumes:
         {{- if .Values.manager.extraVolumes }}
         {{- toYaml .Values.manager.extraVolumes | nindent 8 }}
+        {{- end }}
+        {{- if and .Values.certManager.enabled .Values.metrics.enabled .Values.metrics.secure }}
+        - name: metrics-certs
+          secret:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+            optional: false
+            secretName: metrics-server-cert
         {{- end }}
         {{- if and .Values.certManager.enabled .Values.webhook.enabled }}
         - name: webhook-certs
