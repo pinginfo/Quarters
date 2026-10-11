@@ -74,11 +74,29 @@ Prerequisites: cert-manager (webhook certificates), Cilium, and Gatekeeper
 enabled and webhook `failurePolicy: Fail`; see the architecture doc.
 
 ```sh
-make docker-build docker-push IMG=ghcr.io/pinginfo/quarters:<tag>
-make deploy IMG=ghcr.io/pinginfo/quarters:<tag>        # CRDs, RBAC, 2 replicas, webhook
+make docker-build docker-push IMG=<registry>/quarters:<tag>   # uses docker, or podman if docker is missing
+make deploy IMG=<registry>/quarters:<tag>        # CRDs, RBAC, 2 replicas, webhook
 kubectl apply -k config/gatekeeper                      # ConstraintTemplate, once Gatekeeper runs
 kubectl apply -f config/samples/profile-default.yaml
 ```
+
+### With Helm
+
+A chart is generated from the same manifests in `dist/chart`. It needs no Go, only `helm` and cert-manager:
+
+```sh
+helm upgrade --install quarters dist/chart -n quarters-system --create-namespace \
+  --set manager.image.repository=<registry>/quarters --set manager.image.tag=<tag>
+```
+
+Useful values: `manager.replicas` (default 2), `manager.imagePullSecrets` for a private registry,
+`certManager.enabled`, `prometheus.enabled`, `crd.keep`. Install the Gatekeeper template from
+`config/gatekeeper` separately. The CRDs are templates of the chart, so `helm upgrade` updates them, and `crd.keep: true`
+(default) keeps them, and so your Tenants, when the release is uninstalled.
+
+The chart is generated: after changing the API, webhooks or `config/`, run `make build-installer`
+and `kubebuilder edit --plugins=helm/v2-alpha --force`, then restore the local edits in
+`dist/chart/values.yaml` (`manager.replicas: 2`). `make helm-deploy IMG=...` wraps `helm upgrade --install`.
 
 If Cilium or Gatekeeper CRDs are installed after the operator started, they are
 picked up within 10 minutes (periodic resync) or on restart.

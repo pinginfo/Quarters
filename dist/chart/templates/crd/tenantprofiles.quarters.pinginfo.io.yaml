@@ -1,0 +1,303 @@
+{{- if .Values.crd.enabled }}
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    {{- if .Values.crd.keep }}
+    "helm.sh/resource-policy": keep
+    {{- end }}
+    controller-gen.kubebuilder.io/version: v0.22.0
+  name: tenantprofiles.quarters.pinginfo.io
+spec:
+  group: quarters.pinginfo.io
+  names:
+    kind: TenantProfile
+    listKind: TenantProfileList
+    plural: tenantprofiles
+    singular: tenantprofile
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: TenantProfile is a named set of defaults referenced by Tenants.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              TenantProfileSpec holds the defaults a Tenant inherits (the old values.yaml
+              "defaults" block). A Tenant only states what differs.
+            properties:
+              limitRange:
+                description: limitRange configures the per-container LimitRange.
+                properties:
+                  default:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: default is the limit applied to containers that do
+                      not set one.
+                    type: object
+                  defaultRequest:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: defaultRequest is the request applied to containers
+                      that do not set one.
+                    type: object
+                  max:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: max is the maximum a container may set.
+                    type: object
+                  min:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: min is the minimum a container must set.
+                    type: object
+                type: object
+              network:
+                description: network configures the Cilium network policies of the
+                  namespace.
+                properties:
+                  egress:
+                    description: |-
+                      EgressSpec lists where the pods may connect to. When nothing is allowed, all
+                      egress is denied. DNS to kube-dns is always allowed once any egress is.
+                    properties:
+                      allowAll:
+                        description: allowAll allows all egress traffic.
+                        type: boolean
+                      toCIDRs:
+                        description: toCIDRs lists CIDR ranges the pods may reach.
+                        items:
+                          description: CIDRRule allows a CIDR range minus some exceptions.
+                          properties:
+                            cidr:
+                              type: string
+                            except:
+                              items:
+                                type: string
+                              type: array
+                          required:
+                          - cidr
+                          type: object
+                        type: array
+                      toFQDNs:
+                        description: toFQDNs lists DNS names the pods may reach.
+                        items:
+                          description: FQDNRule allows a DNS name (exact or pattern)
+                            on some ports.
+                          properties:
+                            matchName:
+                              type: string
+                            matchPattern:
+                              type: string
+                            ports:
+                              items:
+                                description: PortRule is a port and protocol.
+                                properties:
+                                  port:
+                                    format: int32
+                                    maximum: 65535
+                                    minimum: 1
+                                    type: integer
+                                  protocol:
+                                    default: TCP
+                                    enum:
+                                    - TCP
+                                    - UDP
+                                    - SCTP
+                                    type: string
+                                required:
+                                - port
+                                type: object
+                              type: array
+                          type: object
+                        type: array
+                      toNamespaces:
+                        description: toNamespaces lists namespace names the pods may
+                          reach.
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  ingress:
+                    description: |-
+                      IngressSpec lists what may reach the pods. When nothing is allowed, all
+                      ingress is denied.
+                    properties:
+                      allowCiliumIngress:
+                        description: allowCiliumIngress allows the Cilium "ingress"
+                          entity (Cilium Ingress / Gateway).
+                        type: boolean
+                      allowFromNamespaces:
+                        description: allowFromNamespaces lists namespace names that
+                          may reach the pods.
+                        items:
+                          type: string
+                        type: array
+                      allowSameNamespace:
+                        description: allowSameNamespace allows traffic between pods
+                          of the namespace.
+                        type: boolean
+                    type: object
+                type: object
+              podSecurity:
+                description: podSecurity sets the Pod Security Admission labels on
+                  the namespace.
+                properties:
+                  audit:
+                    description: PodSecurityLevel is a Pod Security Standard level.
+                    enum:
+                    - privileged
+                    - baseline
+                    - restricted
+                    type: string
+                  enforce:
+                    description: PodSecurityLevel is a Pod Security Standard level.
+                    enum:
+                    - privileged
+                    - baseline
+                    - restricted
+                    type: string
+                  warn:
+                    description: PodSecurityLevel is a Pod Security Standard level.
+                    enum:
+                    - privileged
+                    - baseline
+                    - restricted
+                    type: string
+                type: object
+              quota:
+                additionalProperties:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                description: |-
+                  quota is the ResourceQuota content, keyed by resource name, for example
+                  "requests.cpu", "pods" or "count/statefulsets.apps".
+                type: object
+              scheduling:
+                description: scheduling forces or restricts node placement of the
+                  pods of the namespace.
+                properties:
+                  nodeSelector:
+                    description: 'NodeSelectorSpec is a generic label selector, for
+                      example {location: site-a}.'
+                    properties:
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: labels are the node labels. Any key is accepted.
+                        type: object
+                      mode:
+                        default: Disabled
+                        description: |-
+                          SchedulingMode tells how a scheduling constraint is applied.
+                            - Force: injected into every pod of the namespace (Gatekeeper mutation).
+                            - Allow: pods may use it, anything else is rejected (Gatekeeper validation).
+                            - Disabled: nothing is injected or enforced.
+                        enum:
+                        - Force
+                        - Allow
+                        - Disabled
+                        type: string
+                    type: object
+                  tolerations:
+                    description: TolerationsSpec is a generic set of tolerations.
+                    properties:
+                      items:
+                        description: items are the tolerations. In Force mode each
+                          one needs a key.
+                        items:
+                          description: |-
+                            The pod this Toleration is attached to tolerates any taint that matches
+                            the triple <key,value,effect> using the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: |-
+                                Effect indicates the taint effect to match. Empty means match all taint effects.
+                                When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                              type: string
+                            key:
+                              description: |-
+                                Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                                If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: |-
+                                Operator represents a key's relationship to the value.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+                                Exists is equivalent to wildcard for value, so that a pod can
+                                tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
+                              type: string
+                            tolerationSeconds:
+                              description: |-
+                                TolerationSeconds represents the period of time the toleration (which must be
+                                of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                                it is not set, which means tolerate the taint forever (do not evict). Zero and
+                                negative values will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: |-
+                                Value is the taint value the toleration matches to.
+                                If the operator is Exists, the value should be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                      mode:
+                        default: Disabled
+                        description: |-
+                          SchedulingMode tells how a scheduling constraint is applied.
+                            - Force: injected into every pod of the namespace (Gatekeeper mutation).
+                            - Allow: pods may use it, anything else is rejected (Gatekeeper validation).
+                            - Disabled: nothing is injected or enforced.
+                        enum:
+                        - Force
+                        - Allow
+                        - Disabled
+                        type: string
+                    type: object
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+{{- end }}

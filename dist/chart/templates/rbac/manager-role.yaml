@@ -1,0 +1,101 @@
+apiVersion: rbac.authorization.k8s.io/v1
+{{- if .Values.rbac.namespaced }}
+kind: Role
+{{- else }}
+kind: ClusterRole
+{{- end }}
+metadata:
+{{- if .Values.rbac.namespaced }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
+  name: {{ include "quarters.resourceName" (dict "suffix" "manager-role" "context" $) }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - limitranges
+  - namespaces
+  - resourcequotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cilium.io
+  resources:
+  - ciliumnetworkpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - constraints.gatekeeper.sh
+  resources:
+  - quartersscheduling
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - mutations.gatekeeper.sh
+  resources:
+  - assign
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - quarters.pinginfo.io
+  resources:
+  - tenantprofiles
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - quarters.pinginfo.io
+  resources:
+  - tenants
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - quarters.pinginfo.io
+  resources:
+  - tenants/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - quarters.pinginfo.io
+  resources:
+  - tenants/status
+  verbs:
+  - get
+  - patch
+  - update
