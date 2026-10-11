@@ -45,7 +45,7 @@
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "targets": [{"refId": "A", "instant": true, "expr": "count(max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) or vector(0)"}],
       "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#2a78d6"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#2a78d6", "value": null}]}}, "overrides": []},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value", "justifyMode": "center"}
     },
     {
       "id": 2, "type": "stat", "title": "✔ Ready", "description": "Tenants whose modules are all applied.",
@@ -53,7 +53,7 @@
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "targets": [{"refId": "A", "instant": true, "expr": "sum(max by (tenant) (quarters_tenant_phase{phase=\"Ready\"}) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) or vector(0)"}],
       "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "fixed", "fixedColor": "#0ca30c"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#0ca30c", "value": null}]}}, "overrides": []},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value", "justifyMode": "center"}
     },
     {
       "id": 3, "type": "stat", "title": "✖ Degraded", "description": "Tenants with at least one failing module or an unresolved profile. See the table below.",
@@ -61,7 +61,7 @@
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "targets": [{"refId": "A", "instant": true, "expr": "sum(max by (tenant) (quarters_tenant_phase{phase=\"Degraded\"}) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) or vector(0)"}],
       "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#0ca30c", "value": null}, {"color": "#d03b3b", "value": 1}]}}, "overrides": []},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value", "justifyMode": "center"}
     },
     {
       "id": 4, "type": "stat", "title": "◐ Terminating", "description": "Tenants being deleted (the finalizer is applying the deletion policy).",
@@ -69,7 +69,7 @@
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "targets": [{"refId": "A", "instant": true, "expr": "sum(max by (tenant) (quarters_tenant_phase{phase=\"Terminating\"}) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) or vector(0)"}],
       "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#2a78d6", "value": null}, {"color": "#ec835a", "value": 1}]}}, "overrides": []},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value", "justifyMode": "center"}
     },
     {
       "id": 5, "type": "stat", "title": "⚠ Not reconciled", "description": "Tenants whose spec changed but the status has not caught up (metadata.generation > status.observedGeneration). Stays above 0 if the operator is down or stuck.",
@@ -77,7 +77,7 @@
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "targets": [{"refId": "A", "instant": true, "expr": "count((max by (tenant) (quarters_tenant_generation_lag) * on (tenant) max by (tenant) (quarters_tenant_info{team=~\"$team\",profile=~\"$profile\",tenant=~\"$tenant\"})) > 0) or vector(0)"}],
       "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#0ca30c", "value": null}, {"color": "#fab219", "value": 1}]}}, "overrides": []},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value", "justifyMode": "center"}
     },
     {
       "id": 6, "type": "stat", "title": "✖ Module errors (1h)", "description": "Failed module reconciles in the last hour, across all tenants (not filtered).",
@@ -85,7 +85,7 @@
       "datasource": {"type": "prometheus", "uid": "${datasource}"},
       "targets": [{"refId": "A", "instant": true, "expr": "round(sum(increase(quarters_module_errors_total[1h]))) or vector(0)"}],
       "fieldConfig": {"defaults": {"unit": "none", "decimals": 0, "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "#0ca30c", "value": null}, {"color": "#ec835a", "value": 1}]}}, "overrides": []},
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "justifyMode": "center"}
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "colorMode": "value", "graphMode": "none", "textMode": "value", "justifyMode": "center"}
     },
     {
       "id": 7, "type": "table", "title": "Tenants", "description": "One row per tenant, problems first. Quota columns need kube-state-metrics (kube_resourcequota); they are empty for tenants without that quota key.",
