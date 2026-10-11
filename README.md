@@ -170,3 +170,19 @@ Capacity per node location would need kube-state-metrics to export your node lab
 (`--metric-labels-allowlist=nodes=[location]`); the dashboards do not assume it. With prometheus-operator, enable the chart's ServiceMonitor
 (`--set prometheus.enabled=true`). The metrics endpoint is HTTPS and authenticated, so give the
 Prometheus service account the `quarters-metrics-reader` ClusterRole.
+
+## Releases
+
+`.github/workflows/ci.yml` runs vet, the tests, `helm lint` and a multi-arch image build (not pushed) on pull
+requests and pushes. Pushing a tag such as `v0.1.0` runs `release.yml`, which publishes:
+
+- `ghcr.io/<owner>/quarters:0.1.0` (also `0.1`), for amd64 and arm64
+- `oci://ghcr.io/<owner>/charts/quarters` and `oci://ghcr.io/<owner>/charts/quarters-tenants`, both versioned `0.1.0`
+
+The published operator chart defaults to that image, so no `--set manager.image.*` is needed:
+
+```sh
+helm upgrade --install quarters oci://ghcr.io/<owner>/charts/quarters --version 0.1.0 -n quarters-system --create-namespace
+```
+
+New GHCR packages are private. Make them public in the package settings, or use an `imagePullSecret`.
