@@ -74,7 +74,7 @@ Quarters can take over a namespace the chart created, without recreating anythin
 Do one namespace at a time, starting with the least important (`empty-test`).
 
 ## Before you start
-1. Install Quarters, the `default` profile and (for Allow scheduling) the Gatekeeper template.
+1. Install Quarters, the `default` profile and (for scheduling) the Gatekeeper template, from GHCR as described in the [README](../README.md#install).
 2. Translate the namespace's block of `values.yaml` into a `Tenant` (see `config/samples/tenants.yaml`).
    Fix the known chart problems on the way: `count/statefulsets.apps`, `secrets: "50h"`,
    and review `0.0.0.0/0` egress rules.

@@ -71,45 +71,56 @@ validation rules go in `internal/validation`.
 
 ## Install
 
+Releases are published to GitHub Container Registry by the `release.yml` workflow when a `v*.*.*` tag is pushed:
+
+| Artifact | Location |
+|---|---|
+| Operator image (amd64, arm64) | `ghcr.io/pinginfo/quarters:<version>` |
+| Operator chart | `oci://ghcr.io/pinginfo/charts/quarters` |
+| Tenants chart | `oci://ghcr.io/pinginfo/charts/quarters-tenants` |
+
 Prerequisites: cert-manager (webhook certificates), Cilium, and Gatekeeper
 (optional until you use `scheduling`). Gatekeeper should run with mutation
 enabled and webhook `failurePolicy: Fail`; see the architecture doc.
 
 ```sh
-make docker-build docker-push IMG=<registry>/quarters:<tag>   # uses docker, or podman if docker is missing
-make deploy IMG=<registry>/quarters:<tag>        # CRDs, RBAC, 2 replicas, webhook
-kubectl apply -k config/gatekeeper                      # ConstraintTemplate, once Gatekeeper runs
-kubectl apply -f config/samples/profile-default.yaml
+VERSION=0.1.0
+
+# 1. the operator: CRDs, RBAC, 2 replicas, webhook, metrics
+helm upgrade --install quarters oci://ghcr.io/pinginfo/charts/quarters --version $VERSION \
+  -n quarters-system --create-namespace
+
+# 2. the Gatekeeper ConstraintTemplate, once Gatekeeper runs (only needed for `scheduling`)
+kubectl apply -k "https://github.com/pinginfo/quarters/config/gatekeeper?ref=v$VERSION"
+
+# 3. a TenantProfile and your tenants (see below)
+helm upgrade --install tenants oci://ghcr.io/pinginfo/charts/quarters-tenants --version $VERSION \
+  -n quarters-system -f my-tenants.yaml
 ```
 
-### With Helm
+The published operator chart already points at the matching image, so no `--set manager.image.*` is needed.
+New GHCR packages are private: make the image and both charts public in the package settings of the
+repository, or create an image pull secret and set `manager.imagePullSecrets`.
+`helm show values oci://ghcr.io/pinginfo/charts/quarters --version $VERSION` lists every option.
 
-A chart is generated from the same manifests in `dist/chart`. It needs no Go, only `helm` and cert-manager:
+Useful operator values: `manager.replicas` (default 2), `manager.imagePullSecrets`,
+`certManager.enabled`, `prometheus.enabled`, `crd.keep`. The CRDs are templates of the chart, so
+`helm upgrade` updates them, and `crd.keep: true` (default) keeps them, and so your Tenants, when the release is
+uninstalled. If Cilium or Gatekeeper CRDs are installed after the operator started, they are picked up within
+10 minutes (periodic resync) or on restart.
 
-```sh
-helm upgrade --install quarters dist/chart -n quarters-system --create-namespace \
-  --set manager.image.repository=<registry>/quarters --set manager.image.tag=<tag>
-```
+### Tenants chart
 
-Useful values: `manager.replicas` (default 2), `manager.imagePullSecrets` for a private registry,
-`certManager.enabled`, `prometheus.enabled`, `crd.keep`. Install the Gatekeeper template from
-`config/gatekeeper` separately. The CRDs are templates of the chart, so `helm upgrade` updates them, and `crd.keep: true`
-(default) keeps them, and so your Tenants, when the release is uninstalled.
+`quarters-tenants` only renders `TenantProfile` and `Tenant` objects from a values file. It ships the
+`default` profile, so a minimal `my-tenants.yaml` is:
 
-The chart is generated: after changing the API, webhooks or `config/`, run `make build-installer`
-and `kubebuilder edit --plugins=helm/v2-alpha --force`, then restore the local edits in
-`dist/chart/values.yaml` (`manager.replicas: 2`). `make helm-deploy IMG=...` wraps `helm upgrade --install`.
-
-If Cilium or Gatekeeper CRDs are installed after the operator started, they are
-picked up within 10 minutes (periodic resync) or on restart.
-
-### Tenants with Helm
-
-`dist/tenants-chart` is a second chart that only renders `TenantProfile` and `Tenant` objects from a
-values file. Install the operator chart first (it provides the CRDs and the webhook), then:
-
-```sh
-helm upgrade --install tenants dist/tenants-chart -n quarters-system -f my-tenants.yaml
+```yaml
+tenants:
+  app-production:
+    team: backend
+    quota: {pods: "50"}
+    network:
+      ingress: {allowSameNamespace: true}
 ```
 
 `profiles` and `tenants` are maps keyed by name, and each entry is the `spec` as in the CRD
@@ -117,7 +128,43 @@ helm upgrade --install tenants dist/tenants-chart -n quarters-system -f my-tenan
 `team`, a bad quantity such as `"50h"` or a misspelled field at `helm lint`/`template` time, before the webhook does.
 Objects carry `helm.sh/resource-policy: keep` and Argo CD `Prune=false` (`commonAnnotations`), so removing
 a tenant from the file never deletes it: use `kubectl delete tenant` for that. Profiles are applied in
-Argo CD sync wave 0 and tenants in wave 1. The chart is optional, plain `Tenant` YAML in Git works as well.
+Argo CD sync wave 0 and tenants in wave 1. The chart is optional, plain `Tenant` YAML in Git works as well
+(`config/samples/`). With Argo CD, point an Application at the OCI chart or at your own Git repository.
+
+### Releasing
+
+```sh
+git tag v0.1.0 && git push origin v0.1.0
+```
+
+`ci.yml` runs on pull requests and pushes (vet, tests, `helm lint`, an unpushed multi-arch image build).
+`release.yml` runs the tests, pushes the image, then packages both charts with the tag as chart and app version
+and pushes them. The workflow needs permission to write packages (Settings, Actions, Workflow permissions).
+
+### From source
+
+For development, or without GHCR. The Makefile uses docker, or podman if docker is missing.
+
+```sh
+make docker-build docker-push IMG=<registry>/quarters:<tag>
+make deploy IMG=<registry>/quarters:<tag>               # needs Go and kustomize on the host
+kubectl apply -k config/gatekeeper
+kubectl apply -f config/samples/profile-default.yaml
+```
+
+Or install the in-repo charts, which need only `helm`:
+
+```sh
+helm upgrade --install quarters dist/chart -n quarters-system --create-namespace \
+  --set manager.image.repository=<registry>/quarters --set manager.image.tag=<tag>
+helm upgrade --install tenants dist/tenants-chart -n quarters-system -f my-tenants.yaml
+```
+
+`dist/chart` is generated: after changing the API, webhooks or `config/`, run `make build-installer`
+and `kubebuilder edit --plugins=helm/v2-alpha --force`, then restore the local edits in
+`dist/chart/values.yaml` (`manager.replicas: 2`) and delete the `.github/` the plugin recreates.
+`make helm-deploy IMG=...` wraps `helm upgrade --install`. A gitignored `values.yaml` in the repository root
+is a convenient place for local overrides: `helm upgrade --install quarters dist/chart -f values.yaml`.
 
 ## Develop
 
@@ -170,22 +217,6 @@ Capacity per node location would need kube-state-metrics to export your node lab
 (`--metric-labels-allowlist=nodes=[location]`); the dashboards do not assume it. With prometheus-operator, enable the chart's ServiceMonitor
 (`--set prometheus.enabled=true`). The metrics endpoint is HTTPS and authenticated, so give the
 Prometheus service account the `quarters-metrics-reader` ClusterRole.
-
-## Releases
-
-`.github/workflows/ci.yml` runs vet, the tests, `helm lint` and a multi-arch image build (not pushed) on pull
-requests and pushes. Pushing a tag such as `v0.1.0` runs `release.yml`, which publishes:
-
-- `ghcr.io/<owner>/quarters:0.1.0` (also `0.1`), for amd64 and arm64
-- `oci://ghcr.io/<owner>/charts/quarters` and `oci://ghcr.io/<owner>/charts/quarters-tenants`, both versioned `0.1.0`
-
-The published operator chart defaults to that image, so no `--set manager.image.*` is needed:
-
-```sh
-helm upgrade --install quarters oci://ghcr.io/<owner>/charts/quarters --version 0.1.0 -n quarters-system --create-namespace
-```
-
-New GHCR packages are private. Make them public in the package settings, or use an `imagePullSecret`.
 
 ## License
 
