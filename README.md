@@ -186,3 +186,7 @@ helm upgrade --install quarters oci://ghcr.io/<owner>/charts/quarters --version 
 ```
 
 New GHCR packages are private. Make them public in the package settings, or use an `imagePullSecret`.
+
+## License
+
+Apache License 2.0, see [LICENSE](LICENSE).
