@@ -61,6 +61,7 @@ tenants: {}
   #       allowFromNamespaces: [ingress-nginx, monitoring]
   #     egress:
   #       toNamespaces: [kube-system]
+  #       allowKubeAPIServer: true
   #       toFQDNs:
   #         - matchName: api.github.com
   #           ports: [{port: 443, protocol: TCP}]

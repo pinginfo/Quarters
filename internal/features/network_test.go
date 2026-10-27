@@ -94,3 +94,16 @@ func TestNetworkAllowAllEgress(t *testing.T) {
 	got := RenderNetworkPolicies("x", spec)
 	byName(t, got, "x-allow-egress")
 }
+
+func TestNetworkEgressAllowKubeAPIServer(t *testing.T) {
+	spec := &quartersv1alpha1.NetworkSpec{Egress: &quartersv1alpha1.EgressSpec{AllowKubeAPIServer: ptr.To(true)}}
+	p := byName(t, RenderNetworkPolicies("x", spec), "x-allow-egress")
+	rules, _, _ := unstructured.NestedSlice(p.Object, "spec", "egress")
+	if len(rules) != 2 {
+		t.Fatalf("want DNS + 1 entity rule, got %d", len(rules))
+	}
+	ents, _, _ := unstructured.NestedStringSlice(rules[1].(map[string]any), "toEntities")
+	if len(ents) != 1 || ents[0] != "kube-apiserver" {
+		t.Errorf("toEntities = %v, want [kube-apiserver]", ents)
+	}
+}

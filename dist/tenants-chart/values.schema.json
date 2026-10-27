@@ -32,6 +32,9 @@
                 "allowAll" : {
                   "type" : "boolean"
                 },
+                "allowKubeAPIServer" : {
+                  "type" : "boolean"
+                },
                 "toCIDRs" : {
                   "items" : {
                     "additionalProperties" : false,
@@ -264,6 +267,9 @@
               "additionalProperties" : false,
               "properties" : {
                 "allowAll" : {
+                  "type" : "boolean"
+                },
+                "allowKubeAPIServer" : {
                   "type" : "boolean"
                 },
                 "toCIDRs" : {

@@ -84,6 +84,9 @@ func egressPolicy(ns string, eg *quartersv1alpha1.EgressSpec) *unstructured.Unst
 		for _, f := range eg.ToFQDNs {
 			rules = append(rules, fqdnRule(f))
 		}
+		if ptr.Deref(eg.AllowKubeAPIServer, false) {
+			rules = append(rules, map[string]any{"toEntities": []any{"kube-apiserver"}})
+		}
 	}
 	if len(rules) == 0 {
 		return policy(ns, "deny-egress", map[string]any{

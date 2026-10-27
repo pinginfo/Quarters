@@ -99,6 +99,9 @@ type EgressSpec struct {
 	// toFQDNs lists DNS names the pods may reach.
 	// +optional
 	ToFQDNs []FQDNRule `json:"toFQDNs,omitempty"`
+	// allowKubeAPIServer allows the Cilium "kube-apiserver" entity.
+	// +optional
+	AllowKubeAPIServer *bool `json:"allowKubeAPIServer,omitempty"`
 }
 
 // CIDRRule allows a CIDR range minus some exceptions.

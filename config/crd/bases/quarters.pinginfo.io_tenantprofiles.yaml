@@ -95,6 +95,10 @@ spec:
                       allowAll:
                         description: allowAll allows all egress traffic.
                         type: boolean
+                      allowKubeAPIServer:
+                        description: allowKubeAPIServer allows the Cilium "kube-apiserver"
+                          entity.
+                        type: boolean
                       toCIDRs:
                         description: toCIDRs lists CIDR ranges the pods may reach.
                         items:

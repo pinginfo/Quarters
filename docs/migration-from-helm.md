@@ -67,7 +67,7 @@ Limits that led to Quarters:
 | `quota.requests.cpu`, `quota.pods`, `quota.statefulsets` | `spec.quota` keyed by resource name: `requests.cpu`, `pods`, `count/statefulsets.apps` |
 | hard-coded LimitRange | `spec.limitRange` |
 | `ingressPolicy.allowIngressFromSameNamespace`, `allowCiliumIngress`, `allowIngressFromNamespaces` | `spec.network.ingress.allowSameNamespace`, `allowCiliumIngress`, `allowFromNamespaces` (namespace names, not label maps) |
-| `egressPolicy.allowEgressToNamespaces`, `ToCIDR`, `ToFQDNs` | `spec.network.egress.toNamespaces`, `toCIDRs`, `toFQDNs`; `allowAll` now works |
+| `egressPolicy.allowEgressToNamespaces`, `ToCIDR`, `ToFQDNs` | `spec.network.egress.toNamespaces`, `toCIDRs`, `toFQDNs`; `allowAll` now works. New: `allowKubeAPIServer` |
 | `helm template` output | the objects Quarters applies, with the same names |
 
 Quarters can take over a namespace the chart created, without recreating anything.
