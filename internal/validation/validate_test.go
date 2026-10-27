@@ -61,6 +61,22 @@ func TestTenantRules(t *testing.T) {
 		{"wildcard in matchName", tenant("a", func(t *quartersv1alpha1.Tenant) {
 			t.Spec.Network = &quartersv1alpha1.NetworkSpec{Egress: &quartersv1alpha1.EgressSpec{ToFQDNs: []quartersv1alpha1.FQDNRule{{MatchName: "*"}}}}
 		}), "use matchPattern"},
+		{"podPolicy needs exactly one label", tenant("a", func(t *quartersv1alpha1.Tenant) {
+			t.Spec.Network = &quartersv1alpha1.NetworkSpec{PodPolicies: []quartersv1alpha1.PodPolicy{{Name: "b", PodSelector: quartersv1alpha1.PodSelector{MatchLabels: map[string]string{"a": "1", "b": "2"}}}}}
+		}), "exactly one label"},
+		{"podPolicy duplicate name", tenant("a", func(t *quartersv1alpha1.Tenant) {
+			pp := quartersv1alpha1.PodPolicy{Name: "b", PodSelector: quartersv1alpha1.PodSelector{MatchLabels: map[string]string{"a": "1"}}}
+			t.Spec.Network = &quartersv1alpha1.NetworkSpec{PodPolicies: []quartersv1alpha1.PodPolicy{pp, pp}}
+		}), "Duplicate"},
+		{"podPolicy validates its egress", tenant("a", func(t *quartersv1alpha1.Tenant) {
+			t.Spec.Network = &quartersv1alpha1.NetworkSpec{PodPolicies: []quartersv1alpha1.PodPolicy{{Name: "b",
+				PodSelector: quartersv1alpha1.PodSelector{MatchLabels: map[string]string{"a": "1"}},
+				Egress:      &quartersv1alpha1.EgressSpec{ToCIDRs: []quartersv1alpha1.CIDRRule{{CIDR: "10.0.0.0"}}}}}}
+		}), "CIDR"},
+		{"valid podPolicy", tenant("a", func(t *quartersv1alpha1.Tenant) {
+			t.Spec.Network = &quartersv1alpha1.NetworkSpec{PodPolicies: []quartersv1alpha1.PodPolicy{{Name: "backup",
+				PodSelector: quartersv1alpha1.PodSelector{MatchLabels: map[string]string{"role": "backup"}}}}}
+		}), ""},
 		{"force selector without labels", tenant("a", func(t *quartersv1alpha1.Tenant) {
 			t.Spec.Scheduling = &quartersv1alpha1.SchedulingSpec{NodeSelector: &quartersv1alpha1.NodeSelectorSpec{Mode: quartersv1alpha1.SchedulingForce}}
 		}), "at least one label"},

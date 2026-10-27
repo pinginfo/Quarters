@@ -39,7 +39,7 @@ condition (`NamespaceReady`, `QuotaReady`, `LimitRangeReady`, `NetworkReady`,
 | Namespace | the namespace, `team` labels, user labels/annotations, PSA labels |
 | Quota | `ResourceQuota <ns>-quota` |
 | LimitRange | `LimitRange <ns>-quota-limit-range` |
-| Network | `CiliumNetworkPolicy <ns>-{allow,deny}-{ingress,egress}`; deny-all unless something is allowed |
+| Network | `CiliumNetworkPolicy <ns>-{allow,deny}-{ingress,egress}`; deny-all unless something is allowed. `network.podPolicies` adds policies for the pods carrying one label (`<ns>-<name>-{allow,deny}-{ingress,egress}`); a direction they allow is exempted from the namespace-wide deny |
 | Scheduling | Gatekeeper `Assign` (mode `Force`) or `QuartersScheduling` constraint (mode `Allow`) |
 
 Objects are applied with server-side apply, so manual edits to managed fields

@@ -132,37 +132,75 @@ func network(p *field.Path, n *quartersv1alpha1.NetworkSpec) field.ErrorList {
 	if n == nil {
 		return nil
 	}
-	nsList := func(path *field.Path, list []string) {
-		for i, ns := range list {
-			if msgs := k8sval.IsDNS1123Label(ns); len(msgs) > 0 {
-				errs = append(errs, field.Invalid(path.Index(i), ns, strings.Join(msgs, "; ")))
+	errs = append(errs, ingress(p.Child("ingress"), n.Ingress)...)
+	errs = append(errs, egress(p.Child("egress"), n.Egress)...)
+	seen := map[string]bool{}
+	for i, pp := range n.PodPolicies {
+		ppath := p.Child("podPolicies").Index(i)
+		if msgs := k8sval.IsDNS1123Label(pp.Name); len(msgs) > 0 {
+			errs = append(errs, field.Invalid(ppath.Child("name"), pp.Name, strings.Join(msgs, "; ")))
+		} else if seen[pp.Name] {
+			errs = append(errs, field.Duplicate(ppath.Child("name"), pp.Name))
+		}
+		seen[pp.Name] = true
+		lp := ppath.Child("podSelector", "matchLabels")
+		if len(pp.PodSelector.MatchLabels) != 1 {
+			errs = append(errs, field.Invalid(lp, pp.PodSelector.MatchLabels, "select the pods by exactly one label"))
+		}
+		for k, v := range pp.PodSelector.MatchLabels {
+			for _, m := range k8sval.IsQualifiedName(k) {
+				errs = append(errs, field.Invalid(lp.Key(k), k, m))
+			}
+			for _, m := range k8sval.IsValidLabelValue(v) {
+				errs = append(errs, field.Invalid(lp.Key(k), v, m))
+			}
+		}
+		errs = append(errs, ingress(ppath.Child("ingress"), pp.Ingress)...)
+		errs = append(errs, egress(ppath.Child("egress"), pp.Egress)...)
+	}
+	return errs
+}
+
+func nsList(path *field.Path, list []string) field.ErrorList {
+	var errs field.ErrorList
+	for i, ns := range list {
+		if msgs := k8sval.IsDNS1123Label(ns); len(msgs) > 0 {
+			errs = append(errs, field.Invalid(path.Index(i), ns, strings.Join(msgs, "; ")))
+		}
+	}
+	return errs
+}
+
+func ingress(p *field.Path, in *quartersv1alpha1.IngressSpec) field.ErrorList {
+	if in == nil {
+		return nil
+	}
+	return nsList(p.Child("allowFromNamespaces"), in.AllowFromNamespaces)
+}
+
+func egress(p *field.Path, e *quartersv1alpha1.EgressSpec) field.ErrorList {
+	if e == nil {
+		return nil
+	}
+	errs := nsList(p.Child("toNamespaces"), e.ToNamespaces)
+	for i, c := range e.ToCIDRs {
+		cp := p.Child("toCIDRs").Index(i)
+		if _, _, err := net.ParseCIDR(c.CIDR); err != nil {
+			errs = append(errs, field.Invalid(cp.Child("cidr"), c.CIDR, "not a valid CIDR"))
+		}
+		for j, ex := range c.Except {
+			if _, _, err := net.ParseCIDR(ex); err != nil {
+				errs = append(errs, field.Invalid(cp.Child("except").Index(j), ex, "not a valid CIDR"))
 			}
 		}
 	}
-	if n.Ingress != nil {
-		nsList(p.Child("ingress", "allowFromNamespaces"), n.Ingress.AllowFromNamespaces)
-	}
-	if e := n.Egress; e != nil {
-		nsList(p.Child("egress", "toNamespaces"), e.ToNamespaces)
-		for i, c := range e.ToCIDRs {
-			cp := p.Child("egress", "toCIDRs").Index(i)
-			if _, _, err := net.ParseCIDR(c.CIDR); err != nil {
-				errs = append(errs, field.Invalid(cp.Child("cidr"), c.CIDR, "not a valid CIDR"))
-			}
-			for j, ex := range c.Except {
-				if _, _, err := net.ParseCIDR(ex); err != nil {
-					errs = append(errs, field.Invalid(cp.Child("except").Index(j), ex, "not a valid CIDR"))
-				}
-			}
+	for i, f := range e.ToFQDNs {
+		fp := p.Child("toFQDNs").Index(i)
+		if (f.MatchName == "") == (f.MatchPattern == "") {
+			errs = append(errs, field.Invalid(fp, f.MatchName+f.MatchPattern, "set exactly one of matchName and matchPattern"))
 		}
-		for i, f := range e.ToFQDNs {
-			fp := p.Child("egress", "toFQDNs").Index(i)
-			if (f.MatchName == "") == (f.MatchPattern == "") {
-				errs = append(errs, field.Invalid(fp, f.MatchName+f.MatchPattern, "set exactly one of matchName and matchPattern"))
-			}
-			if strings.ContainsAny(f.MatchName, "*?") {
-				errs = append(errs, field.Invalid(fp.Child("matchName"), f.MatchName, "wildcards are not allowed in matchName, use matchPattern"))
-			}
+		if strings.ContainsAny(f.MatchName, "*?") {
+			errs = append(errs, field.Invalid(fp.Child("matchName"), f.MatchName, "wildcards are not allowed in matchName, use matchPattern"))
 		}
 	}
 	return errs

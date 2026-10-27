@@ -107,3 +107,53 @@ func TestNetworkEgressAllowKubeAPIServer(t *testing.T) {
 		t.Errorf("toEntities = %v, want [kube-apiserver]", ents)
 	}
 }
+
+func backupPolicy(egress *quartersv1alpha1.EgressSpec, ingress *quartersv1alpha1.IngressSpec) quartersv1alpha1.PodPolicy {
+	return quartersv1alpha1.PodPolicy{
+		Name:        "backup",
+		PodSelector: quartersv1alpha1.PodSelector{MatchLabels: map[string]string{"role": "backup"}},
+		Egress:      egress,
+		Ingress:     ingress,
+	}
+}
+
+func TestNetworkPodPolicyAllowIsScopedAndExemptedFromDeny(t *testing.T) {
+	spec := &quartersv1alpha1.NetworkSpec{PodPolicies: []quartersv1alpha1.PodPolicy{
+		backupPolicy(&quartersv1alpha1.EgressSpec{ToFQDNs: []quartersv1alpha1.FQDNRule{{MatchName: "s3.amazonaws.com"}}}, nil),
+	}}
+	got := RenderNetworkPolicies("x", spec)
+
+	scoped := byName(t, got, "x-backup-allow-egress")
+	sel, _, _ := unstructured.NestedMap(scoped.Object, "spec", "endpointSelector", "matchLabels")
+	if sel["role"] != "backup" {
+		t.Errorf("endpointSelector = %v, want role=backup", sel)
+	}
+	// Cilium deny wins: the namespace-wide deny must not select the backup pods.
+	deny := byName(t, got, "x-deny-egress")
+	exprs, _, _ := unstructured.NestedSlice(deny.Object, "spec", "endpointSelector", "matchExpressions")
+	if len(exprs) != 1 {
+		t.Fatalf("want the deny to exclude the backup pods, got %v", exprs)
+	}
+	e := exprs[0].(map[string]any)
+	if e["key"] != "role" || e["operator"] != "NotIn" || e["values"].([]any)[0] != "backup" {
+		t.Errorf("matchExpressions = %v", e)
+	}
+	// Ingress was not set: nothing scoped is generated for it and its deny is untouched.
+	deny = byName(t, got, "x-deny-ingress")
+	if _, found, _ := unstructured.NestedSlice(deny.Object, "spec", "endpointSelector", "matchExpressions"); found {
+		t.Error("ingress deny must not exclude any pods")
+	}
+	if len(got) != 3 {
+		t.Fatalf("want 3 policies, got %v", names(got))
+	}
+}
+
+func TestNetworkPodPolicyEmptyDirectionDeniesThePods(t *testing.T) {
+	spec := &quartersv1alpha1.NetworkSpec{
+		Egress:      &quartersv1alpha1.EgressSpec{AllowAll: ptr.To(true)},
+		PodPolicies: []quartersv1alpha1.PodPolicy{backupPolicy(&quartersv1alpha1.EgressSpec{}, nil)},
+	}
+	got := RenderNetworkPolicies("x", spec)
+	byName(t, got, "x-allow-egress")
+	byName(t, got, "x-backup-deny-egress")
+}

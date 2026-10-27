@@ -103,6 +103,40 @@
                 }
               },
               "type" : "object"
+            },
+            "podPolicies" : {
+              "items" : {
+                "additionalProperties" : false,
+                "properties" : {
+                  "egress" : {
+                    "$ref" : "#/definitions/config/properties/network/properties/egress"
+                  },
+                  "ingress" : {
+                    "$ref" : "#/definitions/config/properties/network/properties/ingress"
+                  },
+                  "name" : {
+                    "type" : "string"
+                  },
+                  "podSelector" : {
+                    "additionalProperties" : false,
+                    "properties" : {
+                      "matchLabels" : {
+                        "additionalProperties" : {
+                          "type" : "string"
+                        },
+                        "maxProperties" : 1,
+                        "minProperties" : 1,
+                        "type" : "object"
+                      }
+                    },
+                    "required" : [ "matchLabels" ],
+                    "type" : "object"
+                  }
+                },
+                "required" : [ "name", "podSelector" ],
+                "type" : "object"
+              },
+              "type" : "array"
             }
           },
           "type" : "object"
@@ -340,6 +374,40 @@
                 }
               },
               "type" : "object"
+            },
+            "podPolicies" : {
+              "items" : {
+                "additionalProperties" : false,
+                "properties" : {
+                  "egress" : {
+                    "$ref" : "#/definitions/config/properties/network/properties/egress"
+                  },
+                  "ingress" : {
+                    "$ref" : "#/definitions/config/properties/network/properties/ingress"
+                  },
+                  "name" : {
+                    "type" : "string"
+                  },
+                  "podSelector" : {
+                    "additionalProperties" : false,
+                    "properties" : {
+                      "matchLabels" : {
+                        "additionalProperties" : {
+                          "type" : "string"
+                        },
+                        "maxProperties" : 1,
+                        "minProperties" : 1,
+                        "type" : "object"
+                      }
+                    },
+                    "required" : [ "matchLabels" ],
+                    "type" : "object"
+                  }
+                },
+                "required" : [ "name", "podSelector" ],
+                "type" : "object"
+              },
+              "type" : "array"
             }
           },
           "type" : "object"

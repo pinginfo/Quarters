@@ -48,6 +48,13 @@ spec:
           ports: [{port: 443, protocol: TCP}]
         - matchPattern: "*.example.com"
           ports: [{port: 443, protocol: TCP}]
+    podPolicies:
+      - name: backup
+        podSelector: {matchLabels: {role: backup}}
+        egress:
+          toFQDNs:
+            - matchName: s3.amazonaws.com
+              ports: [{port: 443, protocol: TCP}]
 ---
 apiVersion: quarters.pinginfo.io/v1alpha1
 kind: Tenant

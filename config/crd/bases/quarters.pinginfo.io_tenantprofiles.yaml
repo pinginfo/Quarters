@@ -173,6 +173,133 @@ spec:
                           of the namespace.
                         type: boolean
                     type: object
+                  podPolicies:
+                    description: |-
+                      podPolicies adds policies that only apply to the pods carrying a label.
+                      They add to the namespace-wide ingress and egress above: a direction they
+                      allow is exempted from the namespace-wide deny, a direction they leave
+                      empty is denied for these pods.
+                    items:
+                      description: |-
+                        PodPolicy is a network policy for the pods carrying one label. A direction
+                        that is not set generates no policy, a direction that is set but allows
+                        nothing denies it.
+                      properties:
+                        egress:
+                          description: |-
+                            EgressSpec lists where the pods may connect to. When nothing is allowed, all
+                            egress is denied. DNS to kube-dns is always allowed once any egress is.
+                          properties:
+                            allowAll:
+                              description: allowAll allows all egress traffic.
+                              type: boolean
+                            allowKubeAPIServer:
+                              description: allowKubeAPIServer allows the Cilium "kube-apiserver"
+                                entity.
+                              type: boolean
+                            toCIDRs:
+                              description: toCIDRs lists CIDR ranges the pods may
+                                reach.
+                              items:
+                                description: CIDRRule allows a CIDR range minus some
+                                  exceptions.
+                                properties:
+                                  cidr:
+                                    type: string
+                                  except:
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - cidr
+                                type: object
+                              type: array
+                            toFQDNs:
+                              description: toFQDNs lists DNS names the pods may reach.
+                              items:
+                                description: FQDNRule allows a DNS name (exact or
+                                  pattern) on some ports.
+                                properties:
+                                  matchName:
+                                    type: string
+                                  matchPattern:
+                                    type: string
+                                  ports:
+                                    items:
+                                      description: PortRule is a port and protocol.
+                                      properties:
+                                        port:
+                                          format: int32
+                                          maximum: 65535
+                                          minimum: 1
+                                          type: integer
+                                        protocol:
+                                          default: TCP
+                                          enum:
+                                          - TCP
+                                          - UDP
+                                          - SCTP
+                                          type: string
+                                      required:
+                                      - port
+                                      type: object
+                                    type: array
+                                type: object
+                              type: array
+                            toNamespaces:
+                              description: toNamespaces lists namespace names the
+                                pods may reach.
+                              items:
+                                type: string
+                              type: array
+                          type: object
+                        ingress:
+                          description: |-
+                            IngressSpec lists what may reach the pods. When nothing is allowed, all
+                            ingress is denied.
+                          properties:
+                            allowCiliumIngress:
+                              description: allowCiliumIngress allows the Cilium "ingress"
+                                entity (Cilium Ingress / Gateway).
+                              type: boolean
+                            allowFromNamespaces:
+                              description: allowFromNamespaces lists namespace names
+                                that may reach the pods.
+                              items:
+                                type: string
+                              type: array
+                            allowSameNamespace:
+                              description: allowSameNamespace allows traffic between
+                                pods of the namespace.
+                              type: boolean
+                          type: object
+                        name:
+                          description: name identifies the policy, the policies are
+                            named <namespace>-<name>-{allow,deny}-{ingress,egress}.
+                          maxLength: 40
+                          minLength: 1
+                          type: string
+                        podSelector:
+                          description: podSelector selects the pods by exactly one
+                            label.
+                          properties:
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              maxProperties: 1
+                              minProperties: 1
+                              type: object
+                          required:
+                          - matchLabels
+                          type: object
+                      required:
+                      - name
+                      - podSelector
+                      type: object
+                    type: array
+                    x-kubernetes-list-map-keys:
+                    - name
+                    x-kubernetes-list-type: map
                 type: object
               podSecurity:
                 description: podSecurity sets the Pod Security Admission labels on

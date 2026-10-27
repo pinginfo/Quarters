@@ -65,5 +65,10 @@ tenants: {}
   #       toFQDNs:
   #         - matchName: api.github.com
   #           ports: [{port: 443, protocol: TCP}]
+  #     podPolicies:
+  #       - name: backup
+  #         podSelector: {matchLabels: {role: backup}}
+  #         egress:
+  #           toFQDNs: [{matchName: s3.amazonaws.com}]
   #   scheduling:
   #     nodeSelector: {mode: Force, labels: {location: site-a}}

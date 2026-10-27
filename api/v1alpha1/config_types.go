@@ -68,6 +68,40 @@ type NetworkSpec struct {
 	Ingress *IngressSpec `json:"ingress,omitempty"`
 	// +optional
 	Egress *EgressSpec `json:"egress,omitempty"`
+	// podPolicies adds policies that only apply to the pods carrying a label.
+	// They add to the namespace-wide ingress and egress above: a direction they
+	// allow is exempted from the namespace-wide deny, a direction they leave
+	// empty is denied for these pods.
+	// +listType=map
+	// +listMapKey=name
+	// +optional
+	PodPolicies []PodPolicy `json:"podPolicies,omitempty"`
+}
+
+// PodPolicy is a network policy for the pods carrying one label. A direction
+// that is not set generates no policy, a direction that is set but allows
+// nothing denies it.
+type PodPolicy struct {
+	// name identifies the policy, the policies are named <namespace>-<name>-{allow,deny}-{ingress,egress}.
+	// +kubebuilder:validation:MinLength=1
+	// +kubebuilder:validation:MaxLength=40
+	// +required
+	Name string `json:"name"`
+	// podSelector selects the pods by exactly one label.
+	// +required
+	PodSelector PodSelector `json:"podSelector"`
+	// +optional
+	Ingress *IngressSpec `json:"ingress,omitempty"`
+	// +optional
+	Egress *EgressSpec `json:"egress,omitempty"`
+}
+
+// PodSelector selects pods by exactly one label.
+type PodSelector struct {
+	// +kubebuilder:validation:MinProperties=1
+	// +kubebuilder:validation:MaxProperties=1
+	// +required
+	MatchLabels map[string]string `json:"matchLabels"`
 }
 
 // IngressSpec lists what may reach the pods. When nothing is allowed, all
