@@ -84,7 +84,7 @@ Prerequisites: cert-manager (webhook certificates), Cilium, and Gatekeeper
 enabled and webhook `failurePolicy: Fail`; see the architecture doc.
 
 ```sh
-VERSION=0.3.0
+VERSION=0.4.0
 
 # 1. the operator: CRDs, RBAC, 2 replicas, webhook, metrics
 helm upgrade --install quarters oci://ghcr.io/pinginfo/charts/quarters --version $VERSION \
@@ -134,7 +134,7 @@ Argo CD sync wave 0 and tenants in wave 1. The chart is optional, plain `Tenant`
 ### Releasing
 
 ```sh
-git tag v0.3.0 && git push origin v0.3.0
+git tag v0.4.0 && git push origin v0.4.0
 ```
 
 `ci.yml` runs on pull requests and pushes (vet, tests, `helm lint`, an unpushed multi-arch image build).
